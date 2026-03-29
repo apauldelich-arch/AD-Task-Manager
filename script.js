@@ -309,30 +309,44 @@ class UI {
         </div>
 
         <div class="dashboard-grid">
-          ${this.store.data.goals.map(goal => `
-            <div class="dashboard-goal-card">
-              <div class="goal-card-header">
-                <span class="goal-card-title">${goal.title}</span>
-                <span class="progress-text">${this.store.getGoalProgress(goal.id)}%</span>
+          ${this.store.data.goals.map((goal, index) => {
+            const goalColors = [
+              'rgba(59, 130, 246, 0.06)', // L-Blue
+              'rgba(139, 92, 246, 0.06)', // L-Purple
+              'rgba(16, 185, 129, 0.06)', // L-Green
+              'rgba(245, 158, 11, 0.06)', // L-Amber
+              'rgba(239, 68, 68, 0.06)',  // L-Red
+              'rgba(107, 114, 128, 0.06)' // L-Gray
+            ];
+            const color = goalColors[index % goalColors.length];
+            const progress = this.store.getGoalProgress(goal.id);
+            const projs = this.store.data.projects.filter(p => p.goalId === goal.id && !p.archived);
+
+            return `
+              <div class="dashboard-goal-card" style="background-color: ${color}; border-color: ${color.replace('0.06', '0.12')}">
+                <div class="goal-card-header">
+                  <span class="goal-card-title">${goal.title}</span>
+                  <span class="progress-text">${progress}%</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                </div>
+                <div class="mt-4">
+                  ${projs.map(p => `
+                    <a href="#" class="dashboard-project-row" data-id="${p.id}">
+                      <div class="project-row-top">
+                        <span>${p.title}</span>
+                        <span class="project-row-tasks">${this.store.data.tasks.filter(t => t.projectId === p.id).length} tasks</span>
+                      </div>
+                      <div class="progress-bar-track" style="height: 3px;">
+                        <div class="progress-bar-fill" style="width: ${this.store.getProjectProgress(p.id)}%"></div>
+                      </div>
+                    </a>
+                  `).join('')}
+                </div>
               </div>
-              <div class="progress-bar-track">
-                <div class="progress-bar-fill" style="width: ${this.store.getGoalProgress(goal.id)}%"></div>
-              </div>
-              <div class="mt-4">
-                ${this.store.data.projects.filter(p => p.goalId === goal.id).map(p => `
-                  <a href="#" class="dashboard-project-row" data-id="${p.id}">
-                    <div class="project-row-top">
-                      <span>${p.title}</span>
-                      <span class="project-row-tasks">${p.tasks ? p.tasks.length : 0} tasks</span>
-                    </div>
-                    <div class="progress-bar-track" style="height: 3px;">
-                      <div class="progress-bar-fill" style="width: ${this.store.getProjectProgress(p.id)}%"></div>
-                    </div>
-                  </a>
-                `).join('')}
-              </div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
     `;
