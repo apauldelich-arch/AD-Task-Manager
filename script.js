@@ -462,22 +462,36 @@ class UI {
     if (!project) return this.renderDashboard();
 
     const goal = this.store.data.goals.find(g => g.id === project.goalId);
+    const goalIndex = this.store.data.goals.findIndex(g => g.id === (goal ? goal.id : ''));
+    const goalColors = [
+      'rgba(59, 130, 246, 0.06)', // L-Blue
+      'rgba(139, 92, 246, 0.06)', // L-Purple
+      'rgba(16, 185, 129, 0.06)', // L-Green
+      'rgba(245, 158, 11, 0.06)', // L-Amber
+      'rgba(239, 68, 68, 0.06)',  // L-Red
+      'rgba(107, 114, 128, 0.06)' // L-Gray
+    ];
+    const color = goalIndex !== -1 ? goalColors[goalIndex % goalColors.length] : 'transparent';
+
     const tasks = this.store.data.tasks.filter(t => t.projectId === projectId);
     const progress = this.store.getProjectProgress(projectId);
 
     this.mainView.innerHTML = `
-      <div class="animate-fade">
+      <div class="animate-fade project-focus-container" style="background-color: ${color}; border-radius: var(--radius-lg); padding: 32px; border: 1px solid ${color.replace('0.06', '0.12')}">
         <header class="content-header">
-          <div class="breadcrumbs">${goal ? goal.title : ''}</div>
-          <h1 class="project-title-large" contenteditable="true" id="proj-title-editable">${project.title}</h1>
-          
-          <div class="progress-container">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" style="width: ${progress}%"></div>
-            </div>
-            <span class="progress-text">${progress}%</span>
+          <div class="breadcrumbs">${goal ? goal.title : 'No Goal'} / ${project.title}</div>
+          <div class="flex-row items-center justify-between">
+             <h1 class="project-title-large" style="margin-bottom: 0;" contenteditable="true" id="proj-title-editable">${project.title}</h1>
+             <i class="ph ph-dots-three-outline" id="project-options-btn"></i>
           </div>
         </header>
+
+        <section class="progress-container">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+          </div>
+          <span class="progress-text">${progress}%</span>
+        </section>
 
         <section class="task-input-section">
           <textarea class="textarea-notes" id="proj-notes" rows="1" placeholder="Project notes...">${project.notes || ''}</textarea>
