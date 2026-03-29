@@ -8,6 +8,7 @@ class Store {
     this.STORAGE_KEY = 'workspace_tasks_db_v3';
     this.data = this.load() || this.getDefaultData();
     this.saveStatus = ''; // 'saving', 'saved', 'error'
+    this.currentCalendarDate = new Date();
   }
 
   getDefaultData() {
@@ -78,6 +79,7 @@ class UI {
     this.store = store;
     this.mainView = document.getElementById('main-view');
     this.goalsContainer = document.getElementById('goals-container');
+    this.calendarContainer = document.getElementById('sidebar-calendar');
     this.saveIndicator = document.getElementById('save-status');
     this.themeToggle = document.getElementById('theme-toggle');
     
@@ -132,11 +134,13 @@ class UI {
 
   render() {
     this.renderSidebar();
+    this.renderCalendar();
     
     // Determine which main view to render
     const view = this.store.data.activeView;
     if (view === 'dashboard') this.renderDashboard();
     else if (['overdue', 'today', 'tomorrow', 'yesterday', 'thisweek'].includes(view)) this.renderDayView(view);
+    else if (view.startsWith('date:')) this.renderDateView(view.replace('date:', ''));
     else this.renderProjectView(view);
   }
 
@@ -240,6 +244,101 @@ class UI {
     });
   }
 
+  renderCalendar() {
+    if (!this.calendarContainer) return;
+    
+    const now = new Date();
+    const current = this.store.currentCalendarDate;
+    const month = current.getMonth();
+    const year = current.getFullYear();
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Day of week adjustment (Monday start = 1, Sunday = 0)
+    // We'll use 0=Sun for grid layout
+    const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(current);
+    
+    this.calendarContainer.innerHTML = `
+      <div class="calendar-header">
+        <span class="calendar-title">${monthName} ${year}</span>
+        <div class="calendar-controls">
+          <button class="calendar-btn prev-month"><i class="ph ph-caret-left"></i></button>
+          <button class="calendar-btn next-month"><i class="ph ph-caret-right"></i></button>
+        </div>
+      </div>
+      <div class="calendar-grid">
+        <div class="calendar-weekday">S</div>
+        <div class="calendar-weekday">M</div>
+        <div class="calendar-weekday">T</div>
+        <div class="calendar-weekday">W</div>
+        <div class="calendar-weekday">T</div>
+        <div class="calendar-weekday">F</div>
+        <div class="calendar-weekday">S</div>
+        ${this.renderCalendarDays(year, month, firstDay, daysInMonth, now)}
+      </div>
+    `;
+
+    // Events
+    this.calendarContainer.querySelector('.prev-month').addEventListener('click', () => {
+      this.store.currentCalendarDate.setMonth(this.store.currentCalendarDate.getMonth() - 1);
+      this.render();
+    });
+    this.calendarContainer.querySelector('.next-month').addEventListener('click', () => {
+      this.store.currentCalendarDate.setMonth(this.store.currentCalendarDate.getMonth() + 1);
+      this.render();
+    });
+    
+    this.calendarContainer.querySelectorAll('.calendar-day').forEach(dayEl => {
+      dayEl.addEventListener('click', () => {
+        const dateStr = dayEl.dataset.date;
+        this.store.data.activeView = `date:${dateStr}`;
+        this.store.save();
+        this.render();
+      });
+    });
+  }
+
+  renderCalendarDays(year, month, firstDay, daysInMonth, today) {
+    let daysHtml = '';
+    
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      daysHtml += `<div class="calendar-day not-current"></div>`;
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const todayDate = new Date();
+      const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const todayStr = formatDate(todayDate);
+      
+      const tomorrow = new Date(todayDate); tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = formatDate(tomorrow);
+      
+      const yesterday = new Date(todayDate); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = formatDate(yesterday);
+
+      const isToday = todayStr === dateStr;
+      
+      let isActive = this.store.data.activeView === `date:${dateStr}`;
+      if (this.store.data.activeView === 'today' && dateStr === todayStr) isActive = true;
+      if (this.store.data.activeView === 'tomorrow' && dateStr === tomorrowStr) isActive = true;
+      if (this.store.data.activeView === 'yesterday' && dateStr === yesterdayStr) isActive = true;
+      
+      const hasTasks = this.store.data.tasks.some(t => t.due === dateStr);
+      
+      daysHtml += `
+        <div class="calendar-day ${isToday ? 'today' : ''} ${isActive ? 'active' : ''}" data-date="${dateStr}">
+          ${day}
+          ${hasTasks ? '<div class="task-dot"></div>' : ''}
+        </div>
+      `;
+    }
+    
+    return daysHtml;
+  }
+
   // --- Main Views ---
 
   renderDashboard() {
@@ -316,27 +415,27 @@ class UI {
   }
 
   renderDayView(type) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayDate = new Date();
+    const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     
     let targetDateStr = '';
     let title = '';
     let icon = '';
 
     if (type === 'today') {
-      targetDateStr = today.toISOString().split('T')[0];
+      targetDateStr = formatDate(todayDate);
       title = 'Today';
       icon = '<span class="icon dot blue">●</span>';
     } else if (type === 'tomorrow') {
-      const tomorrow = new Date(today);
+      const tomorrow = new Date(todayDate);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      targetDateStr = tomorrow.toISOString().split('T')[0];
+      targetDateStr = formatDate(tomorrow);
       title = 'Tomorrow';
       icon = '<span class="icon dot yellow">●</span>';
     } else if (type === 'yesterday') {
-      const yesterday = new Date(today);
+      const yesterday = new Date(todayDate);
       yesterday.setDate(yesterday.getDate() - 1);
-      targetDateStr = yesterday.toISOString().split('T')[0];
+      targetDateStr = formatDate(yesterday);
       title = 'Yesterday';
       icon = '<span class="icon dot red">●</span>';
     } else if (type === 'thisweek') {
@@ -350,7 +449,7 @@ class UI {
       title = 'Overdue';
       icon = '<span class="icon warning">⚠️</span>';
     } else if (type === 'thisweek') {
-      const d = new Date(today);
+      const d = new Date(todayDate);
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
       const monday = new Date(d.setDate(diff));
@@ -377,6 +476,29 @@ class UI {
            <h3 class="section-title" style="padding: 0; margin-bottom: 8px;">DASHBOARD VIEW</h3>
            <h1 class="project-title-large">${icon} ${title}</h1>
            <div class="text-xs text-gray-400">${matches.length} tasks matching this view</div>
+        </header>
+
+        <div class="tasks-container">
+          ${this.renderGroupedTaskList(matches)}
+        </div>
+      </div>
+    `;
+
+    this.bindTaskEvents(matches);
+  }
+
+  renderDateView(dateStr) {
+    const date = new Date(dateStr);
+    const formattedDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(date);
+    
+    const matches = this.store.data.tasks.filter(t => t.due === dateStr);
+
+    this.mainView.innerHTML = `
+      <div class="animate-fade">
+        <header class="content-header">
+           <h3 class="section-title" style="padding: 0; margin-bottom: 8px;">CALENDAR VIEW</h3>
+           <h1 class="project-title-large">${formattedDate}</h1>
+           <div class="text-xs text-gray-400">${matches.length} tasks scheduled for this day</div>
         </header>
 
         <div class="tasks-container">
