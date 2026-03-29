@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Workspace - Task Manager</title>
+    
+    <!-- Premium Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons Script -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="header-top">
+                    <h2>My Workspace</h2>
+                    <div class="flex-row gap-2">
+                        <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
+                            <i class="ph ph-moon"></i>
+                        </button>
+                        <div id="save-status" class="save-indicator"></div>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="sidebar-nav">
+                <!-- Dashboard Section -->
+                <div class="nav-section">
+                    <h3 class="section-title">DASHBOARD</h3>
+                    <ul class="nav-list" id="dashboard-list">
+                        <li>
+                            <button class="nav-item" data-view="dashboard">
+                                <span class="icon"><i class="ph ph-layout"></i></span>
+                                <span>DASHBOARD</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="overdue">
+                                <span class="icon warning">⚠️</span>
+                                <span>OVERDUE</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="yesterday">
+                                <span class="icon dot red">●</span>
+                                <span>YESTERDAY</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="today">
+                                <span class="icon dot blue">●</span>
+                                <span>TODAY</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="tomorrow">
+                                <span class="icon dot yellow">●</span>
+                                <span>TOMORROW</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="thisweek">
+                                <span class="icon dot purple">●</span>
+                                <span>THIS WEEK</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Projects Section -->
+                <div class="nav-section projects-section">
+                    <div id="goals-container"></div>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <button id="add-goal-btn" class="add-goal-btn">+ Add Goal</button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area (Dynamic) -->
+        <main class="main-content" id="main-view">
+            <!-- Content will be injected by script.js -->
+        </main>
+    </div>
+
+    <!-- App Logic -->
+    <script src="script.js"></script>
+</body>
+</html>

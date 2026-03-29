@@ -1,0 +1,14 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# VS Code / IDE stuff
+.vscode/
+.idea/
+
+# Local data (if you ever add local testing files)
+/tmp/
+*.log
+
+# Docker metadata
+.dockerignore
