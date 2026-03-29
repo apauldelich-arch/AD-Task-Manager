@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Workspace - Task Manager</title>
-    
+
     <!-- Premium Font: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
-    
+
     <!-- Phosphor Icons Script -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -73,6 +75,18 @@
                                 <span>THIS WEEK</span>
                             </button>
                         </li>
+                        <li>
+                            <button class="nav-item" data-view="goals_list">
+                                <span class="icon"><i class="ph ph-target"></i></span>
+                                <span>GOALS</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-item" data-view="archive_list">
+                                <span class="icon"><i class="ph ph-archive"></i></span>
+                                <span>ARCHIVE</span>
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
@@ -86,7 +100,7 @@
                 <div class="nav-section projects-section">
                     <div id="goals-container"></div>
                 </div>
-                
+
                 <div class="sidebar-footer">
                     <button id="add-goal-btn" class="add-goal-btn">+ Add Goal</button>
                 </div>
@@ -102,4 +116,5 @@
     <!-- App Logic -->
     <script src="script.js"></script>
 </body>
+
 </html>

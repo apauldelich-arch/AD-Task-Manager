@@ -372,3 +372,172 @@ body {
     padding: 32px 24px;
   }
 }
+
+/* Goals List View Styles */
+.all-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.goal-view-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.goal-view-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.goal-view-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.goal-view-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+
+/* Task Group States */
+.task-group.collapsed .group-content {
+  display: none;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.group-header:hover {
+  color: var(--text-main);
+}
+
+.toggle-group {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-tertiary);
+}
+
+.task-group.collapsed .toggle-group {
+  transform: rotate(-90deg);
+}
+
+.proj-view-section {
+  margin-bottom: 8px;
+}
+
+.proj-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 16px;
+}
+
+.proj-view-header:hover {
+  opacity: 0.7;
+}
+
+.proj-view-header i {
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.proj-view-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.proj-view-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.proj-view-progress {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue-text);
+  background: var(--accent-blue-bg);
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.add-project-btn-large {
+  align-self: flex-start;
+  margin-left: 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-project-btn-large:hover {
+  background: var(--bg-main);
+  border-color: var(--accent-blue-text);
+  color: var(--accent-blue-text);
+}
+
+.add-goal-btn-large {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  background: var(--accent-blue-text);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.add-goal-btn-large:hover {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+}
+
+.goal-view-controls, .proj-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proj-view-section.archived {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.proj-view-section.archived .proj-view-progress {
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+}

@@ -123,6 +123,23 @@ class UI {
       this.store.save();
       this.applyTheme();
     });
+
+    // Global Group Toggle (Event Delegation)
+    this.mainView.addEventListener('click', (e) => {
+      const header = e.target.closest('.group-header');
+      if (header) {
+        const group = header.closest('.task-group');
+        const contextId = group.dataset.context;
+        if (contextId) {
+          const proj = this.store.data.projects.find(p => p.id === contextId);
+          if (proj) {
+            proj.completedCollapsed = !proj.completedCollapsed;
+            this.store.save();
+            this.render();
+          }
+        }
+      }
+    });
   }
 
   applyTheme() {
@@ -140,108 +157,20 @@ class UI {
     const view = this.store.data.activeView;
     if (view === 'dashboard') this.renderDashboard();
     else if (['overdue', 'today', 'tomorrow', 'yesterday', 'thisweek'].includes(view)) this.renderDayView(view);
+    else if (view === 'goals_list' || view === 'projects_list') this.renderGoalsListView();
+    else if (view === 'archive_list') this.renderArchiveView();
     else if (view.startsWith('date:')) this.renderDateView(view.replace('date:', ''));
     else this.renderProjectView(view);
   }
 
   renderSidebar() {
-    this.goalsContainer.innerHTML = '';
-    
-    // Highlight active dashboard link
+    // Only highlight active dashboard links
     document.querySelectorAll('.nav-item').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === this.store.data.activeView);
     });
 
-    this.store.data.goals.forEach(goal => {
-      const gEl = document.createElement('div');
-      gEl.className = 'goal-group';
-      
-      const projs = this.store.data.projects.filter(p => p.goalId === goal.id);
-      const isCollapsed = goal.collapsed || false;
-      
-      gEl.innerHTML = `
-        <div class="goal-header ${isCollapsed ? 'collapsed' : ''}" data-id="${goal.id}">
-          <i class="ph-bold ph-caret-down caret"></i>
-          <input type="text" class="goal-title-input" value="${goal.title}">
-          <div class="goal-controls">
-            <button class="icon-btn delete-goal" title="Delete Goal"><i class="ph ph-trash"></i></button>
-          </div>
-        </div>
-        <div class="project-list" style="display: ${isCollapsed ? 'none' : 'block'}">
-          ${projs.map(p => `
-            <div class="project-item ${p.id === this.store.data.activeView ? 'active' : ''}" data-id="${p.id}">
-              <input type="text" class="project-title-input" value="${p.title}">
-              <div class="project-controls">
-                <button class="icon-btn delete-project"><i class="ph ph-x"></i></button>
-              </div>
-            </div>
-          `).join('')}
-          <button class="add-project-btn" data-goal-id="${goal.id}">+ project</button>
-        </div>
-      `;
-
-      // Sidebar Events
-      gEl.querySelector('.caret').addEventListener('click', (e) => {
-        e.stopPropagation();
-        goal.collapsed = !goal.collapsed;
-        this.store.save();
-        this.renderSidebar();
-      });
-
-      gEl.querySelector('.goal-title-input').addEventListener('change', (e) => {
-        goal.title = e.target.value;
-        this.store.save();
-      });
-
-      gEl.querySelector('.delete-goal').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm(`Delete goal "${goal.title}" and all its projects?`)) {
-          this.store.data.projects = this.store.data.projects.filter(p => p.goalId !== goal.id);
-          this.store.data.goals = this.store.data.goals.filter(g => g.id !== goal.id);
-          this.store.data.activeView = 'dashboard';
-          this.store.save();
-          this.render();
-        }
-      });
-
-      gEl.querySelectorAll('.project-item').forEach(pItem => {
-        const pId = pItem.dataset.id;
-        const project = this.store.data.projects.find(p => p.id === pId);
-
-        pItem.addEventListener('click', (e) => {
-          if (e.target.classList.contains('project-title-input')) return;
-          this.store.data.activeView = pId;
-          this.store.save();
-          this.render();
-        });
-
-        pItem.querySelector('.project-title-input').addEventListener('change', (e) => {
-          project.title = e.target.value;
-          this.store.save();
-          if (this.store.data.activeView === pId) this.render(); // Update breadcrumbs if active
-        });
-
-        pItem.querySelector('.delete-project').addEventListener('click', (e) => {
-          e.stopPropagation();
-          const pId = pItem.dataset.id;
-          this.store.data.projects = this.store.data.projects.filter(p => p.id !== pId);
-          this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== pId);
-          if (this.store.data.activeView === pId) this.store.data.activeView = 'dashboard';
-          this.store.save();
-          this.render();
-        });
-      });
-
-      gEl.querySelector('.add-project-btn').addEventListener('click', () => {
-        const pId = this.store.generateId('p');
-        this.store.data.projects.push({ id: pId, goalId: goal.id, title: 'New Project', notes: '' });
-        this.store.data.activeView = pId;
-        this.store.save();
-        this.render();
-      });
-
-      this.goalsContainer.appendChild(gEl);
-    });
+    // If goalsContainer exists in the sidebar, we keep it empty or remove it.
+    if (this.goalsContainer) this.goalsContainer.innerHTML = '';
   }
 
   renderCalendar() {
@@ -268,14 +197,14 @@ class UI {
         </div>
       </div>
       <div class="calendar-grid">
-        <div class="calendar-weekday">S</div>
         <div class="calendar-weekday">M</div>
         <div class="calendar-weekday">T</div>
         <div class="calendar-weekday">W</div>
         <div class="calendar-weekday">T</div>
         <div class="calendar-weekday">F</div>
         <div class="calendar-weekday">S</div>
-        ${this.renderCalendarDays(year, month, firstDay, daysInMonth, now)}
+        <div class="calendar-weekday">S</div>
+        ${this.renderCalendarDays(year, month, daysInMonth)}
       </div>
     `;
 
@@ -299,12 +228,16 @@ class UI {
     });
   }
 
-  renderCalendarDays(year, month, firstDay, daysInMonth, today) {
+  renderCalendarDays(year, month, daysInMonth) {
     let daysHtml = '';
+    
+    // Day of week adjustment (Monday start = 0, Sunday = 6)
+    const firstDayRaw = new Date(year, month, 1).getDay();
+    const firstDay = firstDayRaw === 0 ? 6 : firstDayRaw - 1;
     
     // Empty cells before first day
     for (let i = 0; i < firstDay; i++) {
-      daysHtml += `<div class="calendar-day not-current"></div>`;
+        daysHtml += `<div class="calendar-day not-current"></div>`;
     }
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -541,7 +474,7 @@ class UI {
         </section>
 
         <div class="tasks-container" id="project-tasks-list">
-          ${this.renderGroupedTaskList(tasks)}
+          ${this.renderGroupedTaskList(tasks, project.id)}
         </div>
       </div>
     `;
@@ -589,7 +522,193 @@ class UI {
     this.bindTaskEvents(tasks);
   }
 
-  renderGroupedTaskList(tasks) {
+  renderGoalsListView() {
+    this.mainView.innerHTML = `
+      <div class="animate-fade">
+        <header class="content-header">
+           <h3 class="section-title" style="padding: 0; margin-bottom: 8px;">DASHBOARD VIEW</h3>
+           <h1 class="project-title-large"><i class="ph ph-target"></i> GOALS</h1>
+        </header>
+        
+        <div id="all-goals-list" class="all-goals-list">
+             <!-- Dynamically injected -->
+        </div>
+      </div>
+    `;
+
+    const container = document.getElementById('all-goals-list');
+    let allTasksInView = [];
+
+    this.store.data.goals.forEach(goal => {
+      const gProjs = this.store.data.projects.filter(p => p.goalId === goal.id && !p.archived);
+
+      const gEl = document.createElement('div');
+      gEl.className = 'goal-view-section';
+      
+      const gHeader = document.createElement('div');
+      gHeader.className = 'goal-view-header';
+      gHeader.innerHTML = `
+        <span class="goal-view-title">${goal.title}</span>
+        <div class="goal-view-line"></div>
+        <div class="goal-view-controls">
+          <button class="icon-btn delete-goal" title="Delete Goal"><i class="ph ph-trash"></i></button>
+        </div>
+      `;
+      gEl.appendChild(gHeader);
+
+      gHeader.querySelector('.delete-goal').addEventListener('click', () => {
+        if (confirm(`Delete goal "${goal.title}" and all its projects?`)) {
+          this.store.data.projects = this.store.data.projects.filter(p => p.goalId !== goal.id);
+          this.store.data.goals = this.store.data.goals.filter(g => g.id !== goal.id);
+          this.store.save();
+          this.render();
+        }
+      });
+
+      gProjs.forEach(proj => {
+        const pTasks = this.store.data.tasks.filter(t => t.projectId === proj.id);
+        allTasksInView = allTasksInView.concat(pTasks);
+
+        const pEl = document.createElement('div');
+        pEl.className = 'proj-view-section';
+        
+        pEl.innerHTML = `
+          <div class="proj-view-header" data-id="${proj.id}">
+             <div class="proj-view-meta">
+               <h3 class="proj-view-title">${proj.title}</h3>
+               <span class="proj-view-progress">${this.store.getProjectProgress(proj.id)}%</span>
+             </div>
+             <div class="proj-view-controls flex-row gap-2">
+                <button class="icon-btn archive-project" title="Archive Project"><i class="ph ph-archive-box"></i></button>
+                <button class="icon-btn delete-project" title="Delete Project"><i class="ph ph-x"></i></button>
+                <i class="ph ph-arrow-right"></i>
+             </div>
+          </div>
+          <div class="tasks-container">
+            ${this.renderGroupedTaskList(pTasks, proj.id)}
+          </div>
+        `;
+
+        pEl.querySelector('.proj-view-header').addEventListener('click', (e) => {
+          if (e.target.closest('.delete-project') || e.target.closest('.archive-project')) return;
+          this.store.data.activeView = proj.id;
+          this.store.save();
+          this.render();
+        });
+
+        pEl.querySelector('.archive-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          proj.archived = true;
+          this.store.save();
+          this.render();
+        });
+
+        pEl.querySelector('.delete-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete project "${proj.title}"?`)) {
+             this.store.data.projects = this.store.data.projects.filter(p => p.id !== proj.id);
+             this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== proj.id);
+             this.store.save();
+             this.render();
+          }
+        });
+
+        gEl.appendChild(pEl);
+      });
+
+      const addProjBtn = document.createElement('button');
+      addProjBtn.className = 'add-project-btn-large';
+      addProjBtn.innerHTML = `<i class="ph ph-plus-circle"></i> Add Project to ${goal.title}`;
+      addProjBtn.addEventListener('click', () => {
+          const pId = this.store.generateId('p');
+          this.store.data.projects.push({ id: pId, goalId: goal.id, title: 'New Project', notes: '' });
+          this.store.data.activeView = pId;
+          this.store.save();
+          this.render();
+      });
+      gEl.appendChild(addProjBtn);
+
+      container.appendChild(gEl);
+    });
+
+    const addGoalFooter = document.createElement('div');
+    addGoalFooter.className = 'mt-12 pt-8 text-center border-t border-light';
+    addGoalFooter.innerHTML = `
+        <button class="add-goal-btn-large">+ Create New Goal</button>
+    `;
+    addGoalFooter.querySelector('button').addEventListener('click', () => {
+        const gId = this.store.generateId('g');
+        this.store.data.goals.push({ id: gId, title: 'New Goal', projects: [], collapsed: false });
+        this.store.save();
+        this.render();
+    });
+    container.appendChild(addGoalFooter);
+
+    this.bindTaskEvents(allTasksInView);
+  }
+
+  renderArchiveView() {
+    this.mainView.innerHTML = `
+      <div class="animate-fade">
+        <header class="content-header">
+           <h3 class="section-title" style="padding: 0; margin-bottom: 8px;">DASHBOARD VIEW</h3>
+           <h1 class="project-title-large"><i class="ph ph-archive"></i> ARCHIVE</h1>
+        </header>
+        
+        <div id="archive-list" class="all-goals-list">
+             <!-- Dynamically injected -->
+        </div>
+      </div>
+    `;
+
+    const container = document.getElementById('archive-list');
+    const archivedProjs = this.store.data.projects.filter(p => p.archived);
+
+    if (archivedProjs.length === 0) {
+      container.innerHTML = `<div class="text-center py-24 text-tertiary">No archived projects found</div>`;
+      return;
+    }
+
+    archivedProjs.forEach(proj => {
+      const pTasks = this.store.data.tasks.filter(t => t.projectId === proj.id);
+      const pEl = document.createElement('div');
+      pEl.className = 'proj-view-section archived';
+      
+      pEl.innerHTML = `
+        <div class="proj-view-header" data-id="${proj.id}">
+           <div class="proj-view-meta">
+             <h3 class="proj-view-title">${proj.title}</h3>
+             <span class="proj-view-progress">Archived</span>
+           </div>
+           <div class="proj-view-controls flex-row gap-2">
+              <button class="icon-btn unarchive-project" title="Unarchive Project"><i class="ph ph-arrow-u-up-left"></i></button>
+              <button class="icon-btn delete-project" title="Delete Permanently"><i class="ph ph-trash"></i></button>
+           </div>
+        </div>
+      `;
+
+      pEl.querySelector('.unarchive-project').addEventListener('click', (e) => {
+        e.stopPropagation();
+        proj.archived = false;
+        this.store.save();
+        this.render();
+      });
+
+      pEl.querySelector('.delete-project').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete project "${proj.title}" permanently?`)) {
+           this.store.data.projects = this.store.data.projects.filter(p => p.id !== proj.id);
+           this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== proj.id);
+           this.store.save();
+           this.render();
+        }
+      });
+
+      container.appendChild(pEl);
+    });
+  }
+
+  renderGroupedTaskList(tasks, projectId = null) {
     if (!tasks.length) return `<div class="text-center py-12 text-tertiary font-medium">No tasks found</div>`;
     
     const groups = {
@@ -598,9 +717,15 @@ class UI {
       'completed': tasks.filter(t => t.status === 'completed')
     };
     
-    const renderSection = (title, tasks, iconClass, colorClass) => {
+    const renderSection = (title, tasks, iconClass, colorClass, isCollapsible = false) => {
       if (tasks.length === 0) return '';
-      // Sort each group internally by due date (or by goal/project title)
+      
+      let isCollapsed = false;
+      if (isCollapsible && projectId) {
+        const proj = this.store.data.projects.find(p => p.id === projectId);
+        isCollapsed = proj ? !!proj.completedCollapsed : false;
+      }
+
       const sorted = [...tasks].sort((a,b) => { 
         if(!a.due&&!b.due) return 0; 
         if(!a.due) return 1; 
@@ -609,9 +734,14 @@ class UI {
       });
 
       return `
-        <div class="task-group ${colorClass}">
-          <h4 class="group-header"><i class="ph-bold ${iconClass}"></i> ${title} <span class="group-count">${tasks.length}</span></h4>
-          ${this.renderTaskList(sorted)}
+        <div class="task-group ${colorClass} ${isCollapsed ? 'collapsed' : ''}" data-context="${isCollapsible ? (projectId || '') : ''}">
+          <h4 class="group-header">
+            ${isCollapsible ? `<i class="ph ph-caret-down toggle-group"></i>` : ''}
+            <i class="ph-bold ${iconClass}"></i> ${title} <span class="group-count">${tasks.length}</span>
+          </h4>
+          <div class="group-content">
+            ${this.renderTaskList(sorted)}
+          </div>
         </div>
       `;
     };
@@ -619,7 +749,7 @@ class UI {
     return (
       renderSection('In Progress', groups['in-progress'], 'ph-clock-countdown', 'doing') +
       renderSection('Planned', groups['planned'], 'ph-calendar-blank', 'planned') +
-      renderSection('Completed', groups['completed'], 'ph-check-circle', 'done')
+      renderSection('Completed', groups['completed'], 'ph-check-circle', 'done', true)
     );
   }
 
