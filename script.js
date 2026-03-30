@@ -422,34 +422,50 @@ class UI {
     const totalTasks = this.store.data.tasks;
     const completed = totalTasks.filter(t => t.status === 'completed').length;
     const inProgress = totalTasks.filter(t => t.status === 'in-progress').length;
+    const planned = totalTasks.filter(t => t.status === 'planned').length;
 
     this.mainView.innerHTML = `
       <div class="animate-fade">
         <header class="content-header">
            <h1 class="project-title-large">Dashboard</h1>
         </header>
-        
-        <div class="dashboard-metrics">
+
+        <div class="metrics-grid mb-8">
           <div class="metric-card">
-            <div class="metric-val">${this.store.data.goals.length}</div>
+            <div class="metric-val text-blue">${this.store.data.goals.length}</div>
             <div class="metric-label">Goals</div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">${this.store.data.projects.length}</div>
+            <div class="metric-val text-amber">${this.store.data.projects.length}</div>
             <div class="metric-label">Projects</div>
           </div>
           <div class="metric-card">
             <div class="metric-val">${totalTasks.length}</div>
-            <div class="metric-label">Tasks</div>
+            <div class="metric-label">Total Tasks</div>
           </div>
           <div class="metric-card">
-            <div class="metric-val text-blue">${inProgress}</div>
+            <div class="metric-val text-blue">${planned}</div>
+            <div class="metric-label">Planned</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val text-amber">${inProgress}</div>
             <div class="metric-label">Doing</div>
           </div>
           <div class="metric-card">
             <div class="metric-val text-green">${completed}</div>
             <div class="metric-label">Done</div>
           </div>
+        </div>
+
+        <section class="focus-section">
+            <h2 class="project-title-large mb-4">Managerial Focus</h2>
+            <div class="focus-grid">
+                ${this.renderFocusCards()}
+            </div>
+        </section>
+
+        <div class="mt-10 mb-4">
+            <h2 class="project-title-large">Goals & Projects</h2>
         </div>
 
         <div class="dashboard-grid">
@@ -503,6 +519,30 @@ class UI {
         this.render();
       });
     });
+  }
+
+  renderFocusCards() {
+    const critical = this.store.data.tasks.filter(t => t.status !== 'completed' && t.priority === 'high').slice(0, 4);
+
+    if (critical.length === 0) {
+        return `<div class="text-tertiary font-medium">No critical tasks identified for focus. Low-intensity mode active.</div>`;
+    }
+
+    return critical.map(task => {
+        const p = this.store.data.projects.find(proj => proj.id === task.projectId);
+        return `
+            <div class="focus-card dashboard-project-row" data-id="${p ? p.id : ''}">
+                <div class="focus-card-header">
+                    <span class="focus-tag" style="background: var(--accent-red-bg); color: var(--accent-red-text);">
+                        CRITICAL
+                    </span>
+                    <span class="text-xs text-tertiary">${p ? p.title : ''}</span>
+                </div>
+                <div class="font-bold text-sm truncate">${task.title}</div>
+                <div class="text-xs text-tertiary truncate">${task.notes || 'No details...'}</div>
+            </div>
+        `;
+    }).join('');
   }
 
   renderDayView(type) {
@@ -958,12 +998,17 @@ class UI {
     return tasks.map(t => {
       const isOverdue = this.store.isTaskOverdue(t);
       return `
-        <div class="task-card ${t.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" data-id="${t.id}">
+        <div class="task-card ${t.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''} ${t.blocked ? 'blocked' : ''}" data-id="${t.id}">
           <div class="task-row">
             <input type="checkbox" class="task-checkbox" ${t.status === 'completed' ? 'checked' : ''}>
             <div class="task-content-main">
               <input type="text" class="task-text" value="${t.title}">
               <div class="task-meta-row">
+                <select class="priority-select priority-${t.priority || 'medium'}">
+                  <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+                  <option value="medium" ${t.priority === 'medium' || !t.priority ? 'selected' : ''}>Med</option>
+                  <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+                </select>
                 ${t.estimatedTime ? `<span class="task-time-badge ${t.spentTime > t.estimatedTime ? 'over-estimated' : ''}">
                   <i class="ph ph-timer"></i> ${t.spentTime || 0} / ${t.estimatedTime}h
                 </span>` : ''}
@@ -971,6 +1016,8 @@ class UI {
             </div>
             
             <div class="task-controls">
+              <button class="icon-btn blocker-btn ${t.blocked ? 'is-blocked' : ''}" title="Toggle Blocker"><i class="ph ph-prohibit"></i></button>
+              
               <div class="time-inputs">
                 <input type="number" class="time-val est" placeholder="Est.h" value="${t.estimatedTime || ''}" title="Estimated Hours">
                 <input type="number" class="time-val spent" placeholder="Spent" value="${t.spentTime || ''}" title="Spent Hours">
@@ -1038,6 +1085,18 @@ class UI {
 
       el.querySelector('.toggle-task-notes').addEventListener('click', () => {
         task.expanded = !task.expanded;
+        this.store.save();
+        this.render();
+      });
+
+      el.querySelector('.priority-select').addEventListener('change', (e) => {
+        task.priority = e.target.value;
+        this.store.save();
+        this.render();
+      });
+
+      el.querySelector('.blocker-btn').addEventListener('click', () => {
+        task.blocked = !task.blocked;
         this.store.save();
         this.render();
       });

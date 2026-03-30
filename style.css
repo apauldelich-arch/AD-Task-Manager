@@ -13,6 +13,15 @@
   
   --accent-blue-bg: #EFF6FF;
   --accent-blue-text: #2563EB;
+  --accent-red-bg: #FEF2F2;
+  --accent-red-text: #DC2626;
+  --accent-orange-bg: #FFF7ED;
+  --accent-orange-text: #EA580C;
+  --accent-green-bg: #F0FDF4;
+  --accent-green-text: #16A34A;
+  --accent-amber-bg: #FFFBEB;
+  --accent-amber-text: #D97706;
+
   --dot-red: #EF4444;
   --dot-blue: #3B82F6;
   --dot-yellow: #F59E0B;
@@ -39,6 +48,14 @@
   
   --accent-blue-bg: #1E3A8A;
   --accent-blue-text: #60A5FA;
+  --accent-red-bg: #7F1D1D;
+  --accent-red-text: #F87171;
+  --accent-orange-bg: #7C2D12;
+  --accent-orange-text: #FB923C;
+  --accent-green-bg: #064E3B;
+  --accent-green-text: #34D399;
+  --accent-amber-bg: #78350F;
+  --accent-amber-text: #FBBF24;
   
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
@@ -59,6 +76,9 @@ body {
 .flex-row { display: flex; align-items: center; }
 .gap-2 { gap: 8px; }
 .mt-4 { margin-top: 16px; }
+.mt-10 { margin-top: 40px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-8 { margin-bottom: 32px; }
 
 /* --- Sidebar --- */
 .sidebar {
@@ -656,18 +676,126 @@ body {
     letter-spacing: 0.05em;
 }
 
-.summary-item .value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
 /* Chrome, Safari, Edge, Opera: Remove number arrows */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   appearance: none;
   margin: 0;
+}
+
+/* --- Metrics Dashboard --- */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.metric-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.metric-val {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+}
+
+.text-blue { color: var(--accent-blue-text); }
+.text-amber { color: var(--accent-orange-text); }
+.text-green { color: var(--accent-green-text); }
+.text-red { color: var(--accent-red-text); }
+
+/* --- Priority & Blocker Styles --- */
+.priority-select {
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.priority-high { background: var(--accent-red-bg); color: var(--accent-red-text); border-color: var(--accent-red-text); }
+.priority-medium { background: var(--accent-orange-bg); color: var(--accent-orange-text); border-color: var(--accent-orange-text); }
+.priority-low { background: var(--bg-surface); color: var(--text-tertiary); border-color: var(--border-light); }
+
+.task-card.blocked {
+    opacity: 0.6;
+    border-left: 4px solid var(--accent-red-text);
+}
+
+.task-card.blocked .task-text {
+    text-decoration: line-through;
+}
+
+.blocker-btn {
+    color: var(--text-tertiary);
+    transition: color 0.2s;
+}
+
+.blocker-btn.is-blocked {
+    color: var(--accent-red-text);
+}
+
+/* --- Dashboard Focus Section --- */
+.focus-section {
+    margin-bottom: 40px;
+}
+
+.focus-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.focus-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.focus-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.focus-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.focus-tag {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--accent-red-bg);
+    color: var(--accent-red-text);
 }
 
 /* Firefox */
