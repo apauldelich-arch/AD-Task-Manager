@@ -567,17 +567,27 @@ class UI {
     const container = document.getElementById('all-goals-list');
     let allTasksInView = [];
 
-    this.store.data.goals.forEach(goal => {
+    this.store.data.goals.forEach((goal, i) => {
       const gProjs = this.store.data.projects.filter(p => p.goalId === goal.id && !p.archived);
 
       const gEl = document.createElement('div');
       gEl.className = 'goal-view-section';
       
+      const goalColors = [
+        { bg: 'rgba(59, 130, 246, 0.12)', text: '#3B82F6' },
+        { bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
+        { bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
+        { bg: 'rgba(245, 158, 11, 0.12)', text: '#F59E0B' },
+        { bg: 'rgba(239, 68, 68, 0.12)', text: '#EF4444' },
+        { bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' }
+      ];
+      const colorSet = goalColors[i % goalColors.length];
+
       const gHeader = document.createElement('div');
       gHeader.className = 'goal-view-header';
       gHeader.innerHTML = `
-        <span class="goal-view-title">${goal.title}</span>
-        <div class="goal-view-line"></div>
+        <span class="goal-view-title" style="background-color: ${colorSet.bg}; color: ${colorSet.text}; border-color: ${colorSet.bg}">${goal.title}</span>
+        <div class="goal-view-line" style="background-color: ${colorSet.bg}"></div>
         <div class="goal-view-controls">
           <button class="icon-btn delete-goal" title="Delete Goal"><i class="ph ph-trash"></i></button>
         </div>
