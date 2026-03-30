@@ -397,7 +397,8 @@ body {
 }
 .dashboard-goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .goal-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.goal-card-title { font-weight: 700; font-size: 16px; }
+.goal-card-title { font-weight: 700; font-size: 16px; cursor: text; transition: all 0.2s; outline: none; }
+.goal-card-title:focus { background: rgba(255,255,255,0.4); border-radius: 4px; padding: 0 4px; }
 
 .dashboard-project-row {
   display: block; padding: 12px 16px; margin: 4px -8px; border-radius: var(--radius-sm); text-decoration: none; color: inherit;

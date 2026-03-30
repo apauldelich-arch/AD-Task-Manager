@@ -485,7 +485,7 @@ class UI {
             return `
               <div class="dashboard-goal-card" style="background-color: ${color}; border-color: ${color.replace('0.06', '0.12')}">
                 <div class="goal-card-header">
-                  <span class="goal-card-title">${goal.title}</span>
+                  <span class="goal-card-title" contenteditable="true" data-id="${goal.id}">${goal.title}</span>
                   <span class="progress-text">${progress}%</span>
                 </div>
                 <div class="progress-bar-track">
@@ -517,6 +517,26 @@ class UI {
         this.store.data.activeView = row.dataset.id;
         this.store.save();
         this.render();
+      });
+    });
+
+    // Edit Goal Title from Dashboard
+    this.mainView.querySelectorAll('.goal-card-title').forEach(span => {
+      span.addEventListener('blur', () => {
+        const id = span.dataset.id;
+        const newTitle = span.innerText.trim();
+        const goal = this.store.data.goals.find(g => g.id === id);
+        if (goal && newTitle && newTitle !== goal.title) {
+          goal.title = newTitle;
+          this.store.save();
+          this.renderSidebar();
+        }
+      });
+      span.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          span.blur();
+        }
       });
     });
   }
@@ -795,7 +815,7 @@ class UI {
       const gHeader = document.createElement('div');
       gHeader.className = 'goal-view-header';
       gHeader.innerHTML = `
-        <span class="goal-view-title" style="background-color: ${colorSet.bg}; color: ${colorSet.text}; border-color: ${colorSet.bg}">${goal.title}</span>
+        <span class="goal-view-title" contenteditable="true" style="background-color: ${colorSet.bg}; color: ${colorSet.text}; border-color: ${colorSet.bg}">${goal.title}</span>
         <div class="goal-view-line" style="background-color: ${colorSet.bg}"></div>
         <div class="goal-view-controls">
           <button class="icon-btn delete-goal" title="Delete Goal"><i class="ph ph-trash"></i></button>
@@ -809,6 +829,24 @@ class UI {
           this.store.data.goals = this.store.data.goals.filter(g => g.id !== goal.id);
           this.store.save();
           this.render();
+        }
+      });
+
+      // Edit Goal Title
+      const titleSpan = gHeader.querySelector('.goal-view-title');
+      titleSpan.addEventListener('blur', (e) => {
+        const newTitle = e.target.innerText.trim();
+        if (newTitle && newTitle !== goal.title) {
+          goal.title = newTitle;
+          this.store.save();
+          // Minimal refresh - just update sidebar if needed
+          this.renderSidebar();
+        }
+      });
+      titleSpan.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          titleSpan.blur();
         }
       });
 
