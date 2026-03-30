@@ -522,7 +522,15 @@ class UI {
   }
 
   renderFocusCards() {
-    const critical = this.store.data.tasks.filter(t => t.status !== 'completed' && t.priority === 'high').slice(0, 4);
+    const critical = this.store.data.tasks
+      .filter(t => t.status !== 'completed' && t.priority === 'high')
+      .sort((a, b) => {
+        if (!a.due && !b.due) return 0;
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return a.due.localeCompare(b.due);
+      })
+      .slice(0, 4);
 
     if (critical.length === 0) {
         return `<div class="text-tertiary font-medium">No critical tasks identified for focus. Low-intensity mode active.</div>`;
