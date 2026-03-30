@@ -78,11 +78,18 @@ class UI {
   constructor(store) {
     this.store = store;
     this.mainView = document.getElementById('main-view');
+    this.innerView = document.getElementById('main-view'); // Re-using same logic but pointing to inner
     this.goalsContainer = document.getElementById('goals-container');
     this.calendarContainer = document.getElementById('sidebar-calendar');
     this.saveIndicator = document.getElementById('save-status');
     this.themeToggle = document.getElementById('theme-toggle');
     
+    // Header elements
+    this.searchBar = document.getElementById('global-search');
+    this.quickAddInput = document.getElementById('quick-add-input');
+    this.quickAddBtn = document.getElementById('quick-add-btn');
+    this.suggestionsDropdown = document.getElementById('project-suggestions');
+
     this.init();
   }
 
@@ -140,6 +147,143 @@ class UI {
         }
       }
     });
+
+    // --- Global Search ---
+    this.searchBar.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (q.length > 1) {
+        this.renderSearch(q);
+      } else if (q.length === 0) {
+        this.render();
+      }
+    });
+
+    // Keyboard Shortcut (CMD+K or CTRL+K)
+    window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            this.searchBar.focus();
+        }
+    });
+
+    // --- Quick Add ---
+    const handleQuickAction = () => {
+        const val = this.quickAddInput.value.trim();
+        if (!val) return;
+        this.handleQuickAdd(val);
+        this.quickAddInput.value = '';
+    };
+
+    this.quickAddBtn.addEventListener('click', handleQuickAction);
+    this.quickAddInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleQuickAction();
+    });
+
+    this.quickAddInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        const index = val.lastIndexOf('@');
+        if (index !== -1) {
+            const query = val.substring(index + 1).toLowerCase();
+            this.updateProjectSuggestions(query);
+        } else {
+            this.suggestionsDropdown.style.display = 'none';
+        }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+        if (!this.quickAddInput.contains(e.target) && !this.suggestionsDropdown.contains(e.target)) {
+            this.suggestionsDropdown.style.display = 'none';
+        }
+    });
+  }
+
+  updateProjectSuggestions(query) {
+    const projects = this.store.data.projects.filter(p => 
+        !p.archived && p.title.toLowerCase().includes(query)
+    );
+
+    if (projects.length === 0) {
+        this.suggestionsDropdown.style.display = 'none';
+        return;
+    }
+
+    this.suggestionsDropdown.innerHTML = projects.map(p => {
+        const goal = this.store.data.goals.find(g => g.id === p.goalId);
+        return `
+            <div class="suggestion-item" data-id="${p.id}" data-title="${p.title}">
+                <i class="ph ph-briefcase"></i>
+                <span>${p.title}</span>
+                ${goal ? `<span class="suggestion-item-goal">${goal.title}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    this.suggestionsDropdown.style.display = 'block';
+
+    this.suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const pTitle = item.dataset.title;
+            const val = this.quickAddInput.value;
+            const index = val.lastIndexOf('@');
+            this.quickAddInput.value = val.substring(0, index) + '@' + pTitle + ' ';
+            this.suggestionsDropdown.style.display = 'none';
+            this.quickAddInput.focus();
+        });
+    });
+  }
+
+  handleQuickAdd(text) {
+    // Basic parser for "@ProjectName"
+    let title = text;
+    let projectId = 'p1'; // Default
+    
+    if (text.includes('@')) {
+        const parts = text.split('@');
+        title = parts[0].trim();
+        const pName = parts[1].trim().toLowerCase();
+        const found = this.store.data.projects.find(p => p.title.toLowerCase().includes(pName));
+        if (found) projectId = found.id;
+    }
+
+    this.store.data.tasks.push({
+        id: this.store.generateId('t'),
+        projectId,
+        title,
+        status: 'planned',
+        due: '',
+        notes: '',
+        estimatedTime: 0,
+        spentTime: 0,
+        expanded: false
+    });
+
+    this.store.save();
+    this.render();
+  }
+
+  renderSearch(query) {
+    const q = query.toLowerCase();
+    const tasks = this.store.data.tasks.filter(t => 
+      t.title.toLowerCase().includes(q) || 
+      (t.notes && t.notes.toLowerCase().includes(q))
+    );
+
+    this.mainView.innerHTML = `
+      <div class="animate-fade">
+        <header class="content-header">
+           <h3 class="section-title">SEARCH RESULTS</h3>
+           <h1 class="project-title-large"><i class="ph ph-magnifying-glass"></i> "${query}"</h1>
+           <div class="text-xs text-secondary">${tasks.length} matches found across all projects</div>
+        </header>
+
+        <div class="tasks-container">
+          ${this.renderGroupedTaskList(tasks)}
+        </div>
+      </div>
+    `;
+
+    this.bindTaskEvents(tasks);
   }
 
   applyTheme() {
@@ -486,11 +630,28 @@ class UI {
           </div>
         </header>
 
-        <section class="progress-container">
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" style="width: ${progress}%"></div>
+        <section class="progress-section-group">
+          <div class="progress-container">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" style="width: ${progress}%"></div>
+            </div>
+            <span class="progress-text">${progress}%</span>
           </div>
-          <span class="progress-text">${progress}%</span>
+
+          <div class="time-summary-banner">
+             <div class="summary-item">
+                <span class="label">ESTIMATED</span>
+                <span class="value">${tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0)}h</span>
+             </div>
+             <div class="summary-item">
+                <span class="label">SPENT</span>
+                <span class="value">${tasks.reduce((sum, t) => sum + (t.spentTime || 0), 0)}h</span>
+             </div>
+             <div class="summary-item">
+                <span class="label">EFFICIENCY</span>
+                <span class="value">${tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0) > 0 ? Math.round((tasks.reduce((sum, t) => sum + (t.spentTime || 0), 0) / tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0)) * 100) : 0}%</span>
+             </div>
+          </div>
         </section>
 
         <section class="task-input-section">
@@ -800,9 +961,21 @@ class UI {
         <div class="task-card ${t.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" data-id="${t.id}">
           <div class="task-row">
             <input type="checkbox" class="task-checkbox" ${t.status === 'completed' ? 'checked' : ''}>
-            <input type="text" class="task-text" value="${t.title}">
+            <div class="task-content-main">
+              <input type="text" class="task-text" value="${t.title}">
+              <div class="task-meta-row">
+                ${t.estimatedTime ? `<span class="task-time-badge ${t.spentTime > t.estimatedTime ? 'over-estimated' : ''}">
+                  <i class="ph ph-timer"></i> ${t.spentTime || 0} / ${t.estimatedTime}h
+                </span>` : ''}
+              </div>
+            </div>
             
             <div class="task-controls">
+              <div class="time-inputs">
+                <input type="number" class="time-val est" placeholder="Est.h" value="${t.estimatedTime || ''}" title="Estimated Hours">
+                <input type="number" class="time-val spent" placeholder="Spent" value="${t.spentTime || ''}" title="Spent Hours">
+              </div>
+
               <select class="task-status-select status-${t.status}">
                 <option value="planned" ${t.status === 'planned' ? 'selected' : ''}>Planned</option>
                 <option value="in-progress" ${t.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
@@ -847,6 +1020,18 @@ class UI {
 
       el.querySelector('.input-date').addEventListener('change', (e) => {
         task.due = e.target.value;
+        this.store.save();
+        this.render();
+      });
+
+      el.querySelector('.time-val.est').addEventListener('change', (e) => {
+        task.estimatedTime = parseFloat(e.target.value) || 0;
+        this.store.save();
+        this.render();
+      });
+
+      el.querySelector('.time-val.spent').addEventListener('change', (e) => {
+        task.spentTime = parseFloat(e.target.value) || 0;
         this.store.save();
         this.render();
       });

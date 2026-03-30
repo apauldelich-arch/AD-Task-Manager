@@ -107,9 +107,27 @@
             </nav>
         </aside>
 
-        <!-- Main Content Area (Dynamic) -->
-        <main class="main-content" id="main-view">
-            <!-- Content will be injected by script.js -->
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="app-main-header">
+                <div class="search-container">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="global-search" placeholder="Search tasks, projects, or goals... (⌘K)">
+                </div>
+                <div class="quick-add-container">
+                    <div class="quick-add-input-wrapper">
+                        <input type="text" id="quick-add-input" placeholder="Quick add: 'Report for Q1' @Project...">
+                        <div id="project-suggestions" class="suggestions-dropdown"></div>
+                    </div>
+                    <button id="quick-add-btn" class="quick-add-btn" title="Add Task">
+                        <i class="ph ph-plus"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <div id="main-view" class="main-view-inner">
+                <!-- Content will be injected by script.js -->
+            </div>
         </main>
     </div>
 

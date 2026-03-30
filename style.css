@@ -150,7 +150,209 @@ body {
 
 /* --- Main Content --- */
 .main-content {
-  flex: 1; display: flex; flex-direction: column; padding: 48px 64px; overflow-y: auto; max-width: 900px;
+  flex: 1;
+  background: var(--bg-main);
+  padding: 0;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-view-inner {
+  padding: 32px 40px;
+  flex: 1;
+  max-width: 900px;
+}
+
+/* --- App Main Header --- */
+.app-main-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 16px 40px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+[data-theme="dark"] .app-main-header {
+  background: rgba(15, 17, 21, 0.82);
+}
+
+.search-container {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-container i {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: var(--accent-blue-text);
+  box-shadow: 0 0 0 3px var(--accent-blue-bg);
+}
+
+.quick-add-container {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  max-width: 480px;
+}
+
+.quick-add-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.quick-add-input-wrapper input {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 13px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.quick-add-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--accent-blue-text);
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  animation: slideUp 0.15s ease-out;
+}
+
+[data-theme="dark"] .suggestions-dropdown {
+  background: rgba(30, 34, 42, 0.9);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-item {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.15s;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover, .suggestion-item.active {
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue-text);
+}
+
+.suggestion-item i {
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.suggestion-item:hover i, .suggestion-item.active i {
+  color: var(--accent-blue-text);
+}
+
+.suggestion-item-goal {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.quick-add-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-blue-text);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.quick-add-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+  background: #1d4ed8;
+}
+
+/* --- Task Time Badge --- */
+.task-time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.task-time-badge.over-estimated {
+    border-color: var(--accent-red-text);
+    background: var(--accent-red-bg);
+    color: var(--accent-red-text);
 }
 
 .content-header { margin-bottom: 32px; }
@@ -381,6 +583,99 @@ body {
 }
 
 /* Goals List View Styles */
+/* --- Time Tracking Styles --- */
+.time-inputs {
+  display: flex;
+  gap: 4px;
+}
+
+.time-val {
+  width: 50px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.time-val::placeholder {
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.time-val:focus {
+  outline: none;
+  border-color: var(--accent-blue-text);
+}
+
+.task-content-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-meta-row {
+  display: flex;
+  gap: 8px;
+  margin-top: -4px;
+  margin-left: 12px;
+}
+
+.progress-section-group {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.time-summary-banner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-item .label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+}
+
+.summary-item .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Chrome, Safari, Edge, Opera: Remove number arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .all-goals-list {
   display: flex;
   flex-direction: column;
