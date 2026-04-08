@@ -947,50 +947,134 @@ class UI {
     `;
 
     const container = document.getElementById('archive-list');
-    const archivedProjs = this.store.data.projects.filter(p => p.archived);
+    const archivedProjsTotal = this.store.data.projects.filter(p => p.archived);
 
-    if (archivedProjs.length === 0) {
+    if (archivedProjsTotal.length === 0) {
       container.innerHTML = `<div class="text-center py-24 text-tertiary">No archived projects found</div>`;
       return;
     }
 
-    archivedProjs.forEach(proj => {
-      const pTasks = this.store.data.tasks.filter(t => t.projectId === proj.id);
-      const pEl = document.createElement('div');
-      pEl.className = 'proj-view-section archived';
+    const goalColors = [
+      { bg: 'rgba(59, 130, 246, 0.12)', text: '#3B82F6' },
+      { bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
+      { bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
+      { bg: 'rgba(245, 158, 11, 0.12)', text: '#F59E0B' },
+      { bg: 'rgba(239, 68, 68, 0.12)', text: '#EF4444' },
+      { bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' }
+    ];
+
+    // Group by Goal
+    this.store.data.goals.forEach((goal, i) => {
+      const gProjs = archivedProjsTotal.filter(p => p.goalId === goal.id);
+      if (gProjs.length === 0) return;
+
+      const colorSet = goalColors[i % goalColors.length];
+      const gEl = document.createElement('div');
+      gEl.className = 'goal-view-section';
       
-      pEl.innerHTML = `
-        <div class="proj-view-header" data-id="${proj.id}">
-           <div class="proj-view-meta">
-             <h3 class="proj-view-title">${proj.title}</h3>
-             <span class="proj-view-progress">Archived</span>
-           </div>
-           <div class="proj-view-controls flex-row gap-2">
-              <button class="icon-btn unarchive-project" title="Unarchive Project"><i class="ph ph-arrow-u-up-left"></i></button>
-              <button class="icon-btn delete-project" title="Delete Permanently"><i class="ph ph-trash"></i></button>
-           </div>
-        </div>
+      const gHeader = document.createElement('div');
+      gHeader.className = 'goal-view-header';
+      gHeader.innerHTML = `
+        <span class="goal-view-title" style="background-color: ${colorSet.bg}; color: ${colorSet.text}; border-color: ${colorSet.bg}">${goal.title}</span>
+        <div class="goal-view-line" style="background-color: ${colorSet.bg}"></div>
       `;
+      gEl.appendChild(gHeader);
 
-      pEl.querySelector('.unarchive-project').addEventListener('click', (e) => {
-        e.stopPropagation();
-        proj.archived = false;
-        this.store.save();
-        this.render();
+      gProjs.forEach(proj => {
+        const pEl = document.createElement('div');
+        pEl.className = 'proj-view-section archived';
+        
+        pEl.innerHTML = `
+          <div class="proj-view-header" data-id="${proj.id}">
+             <div class="proj-view-meta">
+               <h3 class="proj-view-title">${proj.title}</h3>
+               <span class="proj-view-progress">Archived</span>
+             </div>
+             <div class="proj-view-controls flex-row gap-2">
+                <button class="icon-btn unarchive-project" title="Unarchive Project"><i class="ph ph-arrow-u-up-left"></i></button>
+                <button class="icon-btn delete-project" title="Delete Permanently"><i class="ph ph-trash"></i></button>
+             </div>
+          </div>
+        `;
+
+        pEl.querySelector('.unarchive-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          proj.archived = false;
+          this.store.save();
+          this.render();
+        });
+
+        pEl.querySelector('.delete-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete project "${proj.title}" permanently?`)) {
+             this.store.data.projects = this.store.data.projects.filter(p => p.id !== proj.id);
+             this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== proj.id);
+             this.store.save();
+             this.render();
+          }
+        });
+
+        gEl.appendChild(pEl);
       });
 
-      pEl.querySelector('.delete-project').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm(`Delete project "${proj.title}" permanently?`)) {
-           this.store.data.projects = this.store.data.projects.filter(p => p.id !== proj.id);
-           this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== proj.id);
-           this.store.save();
-           this.render();
-        }
-      });
-
-      container.appendChild(pEl);
+      container.appendChild(gEl);
     });
+
+    // Handle projects whose goal was deleted or missing goalId
+    const goalIds = this.store.data.goals.map(g => g.id);
+    const orphanedProjs = archivedProjsTotal.filter(p => !goalIds.includes(p.goalId));
+    
+    if (orphanedProjs.length > 0) {
+      const gEl = document.createElement('div');
+      gEl.className = 'goal-view-section';
+      
+      const gHeader = document.createElement('div');
+      gHeader.className = 'goal-view-header';
+      gHeader.innerHTML = `
+        <span class="goal-view-title" style="background-color: rgba(107, 114, 128, 0.12); color: #6B7280; border-color: rgba(107, 114, 128, 0.12)">Other / Orphaned</span>
+        <div class="goal-view-line" style="background-color: rgba(107, 114, 128, 0.12)"></div>
+      `;
+      gEl.appendChild(gHeader);
+
+      orphanedProjs.forEach(proj => {
+        const pEl = document.createElement('div');
+        pEl.className = 'proj-view-section archived';
+        
+        pEl.innerHTML = `
+          <div class="proj-view-header" data-id="${proj.id}">
+             <div class="proj-view-meta">
+               <h3 class="proj-view-title">${proj.title}</h3>
+               <span class="proj-view-progress">Archived</span>
+             </div>
+             <div class="proj-view-controls flex-row gap-2">
+                <button class="icon-btn unarchive-project" title="Unarchive Project"><i class="ph ph-arrow-u-up-left"></i></button>
+                <button class="icon-btn delete-project" title="Delete Permanently"><i class="ph ph-trash"></i></button>
+             </div>
+          </div>
+        `;
+
+        pEl.querySelector('.unarchive-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          proj.archived = false;
+          this.store.save();
+          this.render();
+        });
+
+        pEl.querySelector('.delete-project').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete project "${proj.title}" permanently?`)) {
+             this.store.data.projects = this.store.data.projects.filter(p => p.id !== proj.id);
+             this.store.data.tasks = this.store.data.tasks.filter(t => t.projectId !== proj.id);
+             this.store.save();
+             this.render();
+          }
+        });
+
+        gEl.appendChild(pEl);
+      });
+
+      container.appendChild(gEl);
+    }
   }
 
   renderGroupedTaskList(tasks, projectId = null) {
